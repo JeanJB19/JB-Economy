@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JB Economy 🪙</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ====== JB ECONOMY ======
+     To change the rules, edit the CONFIG block near the top of the
+     JavaScript at the bottom of this file:
+       coinsPerDollar : how many coins equal $1.00   (handbook = 100)
+       savePercent    : % of each cash-out locked in the bank (handbook = 50)
+     Sign-in usernames and passwords can be changed inside the app
+     under "Admin Settings" — no code editing needed.
+  =========================*/
+
+  :root{
+    --bg:#14103b;
+    --bg-glow:#1d1660;
+    --panel:#211a58;
+    --panel-2:#2c2478;
+    --border:rgba(255,255,255,.09);
+    --border-bright:rgba(255,255,255,.16);
+    --coin:#ffce3a;
+    --coin-deep:#f5a623;
+    --cash:#4fe08c;
+    --cash-deep:#1fbd6b;
+    --pop:#ff7aa8;
+    --pop-deep:#ff4f8b;
+    --blue:#6b93ff;
+    --text:#f4f1ff;
+    --muted:#a79fe0;
+    --danger:#ff6b6b;
+    --shadow:0 18px 40px -18px rgba(0,0,0,.65);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:'Nunito',system-ui,sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(1100px 600px at 15% -10%, var(--bg-glow), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, #3a1f6b55, transparent 55%),
+      var(--bg);
+    min-height:100vh;
+    line-height:1.5;
+    padding:20px 16px 60px;
+    overflow-x:hidden;
+  }
+  .wrap{max-width:760px;margin:0 auto}
+
+  h1,h2,h3,.num{font-family:'Fredoka',sans-serif;font-weight:600;letter-spacing:.2px}
+
+  /* ---------- Header ---------- */
+  header{text-align:center;padding:14px 0 26px;position:relative}
+  .logo{
+    display:inline-flex;align-items:center;gap:10px;
+    font-family:'Fredoka';font-size:2rem;font-weight:700;
+  }
+  .logo .coin-badge{
+    width:44px;height:44px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#fff2b0,var(--coin) 45%,var(--coin-deep));
+    display:grid;place-items:center;font-size:1.3rem;
+    box-shadow:0 6px 0 #b9791088, inset 0 -3px 6px #c17f1055;
+  }
+  header p{color:var(--muted);margin-top:6px;font-weight:600}
+
+  /* floating coins */
+  .floaties{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:-1}
+  .floaties span{position:absolute;font-size:1.1rem;opacity:.25;animation:bob 6s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-14px) rotate(6deg)}}
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:linear-gradient(180deg,var(--panel),#1c1650);
+    border:1px solid var(--border);
+    border-radius:22px;
+    padding:22px;
+    box-shadow:var(--shadow);
+    margin-bottom:20px;
+  }
+  .card-title{display:flex;align-items:center;gap:9px;font-size:1.25rem;margin-bottom:4px}
+  .card-title .ico{font-size:1.35rem}
+  .card-sub{color:var(--muted);font-size:.92rem;font-weight:600;margin-bottom:18px}
+
+  /* ---------- Wallet ---------- */
+  .wallet-top{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    background:linear-gradient(120deg,#2a2172,#221a5e);
+    border:1px solid var(--border-bright);
+    border-radius:18px;padding:16px 18px;margin-bottom:16px;
+  }
+  .wallet-top .label{color:var(--muted);font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:1px}
+  .wallet-bal{font-family:'Fredoka';font-size:2.4rem;font-weight:700;line-height:1;color:var(--coin);display:flex;align-items:center;gap:8px}
+  .wallet-bal .c{font-size:1.6rem}
+
+  .earn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .earn-btn{
+    display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:left;
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+    border-radius:14px;padding:11px 13px;cursor:pointer;font-family:inherit;
+    transition:transform .08s ease, border-color .15s, background .15s;
+  }
+  .earn-btn:hover{border-color:var(--coin);background:#332a86}
+  .earn-btn:active{transform:scale(.96)}
+  .earn-btn .t{font-weight:800;font-size:.95rem}
+  .earn-btn .v{font-family:'Fredoka';color:var(--coin);font-weight:600}
+  .earn-btn.bad .v{color:var(--danger)}
+  .earn-btn.bad:hover{border-color:var(--danger);background:#3a2360}
+
+  .custom-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .custom-row input{
+    flex:1;min-width:120px;background:#171247;border:1px solid var(--border-bright);
+    color:var(--text);border-radius:12px;padding:11px 14px;font-family:'Fredoka';font-size:1.05rem;
+  }
+  .custom-row input:focus{outline:2px solid var(--blue);outline-offset:1px}
+  .mini-btn{
+    background:var(--panel-2);border:1px solid var(--border-bright);color:var(--text);
+    border-radius:12px;padding:0 16px;font-family:'Fredoka';font-size:1rem;cursor:pointer;font-weight:500;
+  }
+  .mini-btn:hover{background:#39308f}
+  .mini-btn.minus:hover{border-color:var(--danger);color:#ffd0d0}
+
+  /* ---------- Converter ---------- */
+  .conv-io{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
+  @media(max-width:520px){.conv-io{grid-template-columns:1fr;text-align:center}.conv-arrow{transform:rotate(90deg)}}
+  .io-box{background:#171247;border:1px solid var(--border-bright);border-radius:16px;padding:16px}
+  .io-box .lab{color:var(--muted);font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+  .coin-input{width:100%;background:transparent;border:none;color:var(--coin);font-family:'Fredoka';font-weight:700;font-size:2rem;padding:0}
+  .coin-input:focus{outline:none}
+  .coin-input::placeholder{color:#6a5fb0}
+  .cash-out-num{font-family:'Fredoka';font-weight:700;font-size:2rem;color:var(--cash)}
+  .conv-arrow{font-size:1.6rem;color:var(--muted);text-align:center}
+
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  @media(max-width:400px){.split{grid-template-columns:1fr}}
+  .split-box{border-radius:16px;padding:14px 16px;border:1px solid var(--border)}
+  .split-box.spend{background:linear-gradient(160deg,#123d2b,#12352a);border-color:#2a6f4d}
+  .split-box.save{background:linear-gradient(160deg,#2d2a12,#332b12);border-color:#7a6a1f}
+  .split-box .lab{font-weight:800;font-size:.85rem;display:flex;align-items:center;gap:6px}
+  .split-box .amt{font-family:'Fredoka';font-weight:700;font-size:1.7rem;margin-top:4px}
+  .split-box.spend .amt{color:var(--cash)}
+  .split-box.save .amt{color:var(--coin)}
+  .split-box .hint{color:var(--muted);font-size:.78rem;font-weight:600;margin-top:2px}
+
+  .cta{
+    width:100%;margin-top:16px;border:none;cursor:pointer;
+    background:linear-gradient(120deg,var(--pop),var(--pop-deep));
+    color:#fff;font-family:'Fredoka';font-weight:600;font-size:1.15rem;
+    padding:15px;border-radius:16px;box-shadow:0 8px 0 #c93a6e;
+    transition:transform .08s, box-shadow .08s;
+  }
+  .cta:hover{filter:brightness(1.05)}
+  .cta:active{transform:translateY(4px);box-shadow:0 4px 0 #c93a6e}
+  .cta:disabled{opacity:.5;cursor:not-allowed;box-shadow:0 8px 0 #6b4055}
+
+  .toast{margin-top:12px;text-align:center;font-weight:700;min-height:22px;color:var(--cash)}
+  .toast.warn{color:var(--danger)}
+
+  /* ---------- Bank / Vault ---------- */
+  .vault{
+    text-align:center;background:radial-gradient(circle at 50% 0%,#2a2172,#1a1450);
+    border:1px solid var(--border-bright);border-radius:20px;padding:26px 18px;margin-bottom:16px;position:relative;overflow:hidden;
+  }
+  .vault .icon{font-size:2.6rem;filter:drop-shadow(0 6px 10px rgba(0,0,0,.4))}
+  .vault .save-lab{color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1.5px;font-size:.78rem;margin-top:6px}
+  .vault .save-amt{font-family:'Fredoka';font-weight:700;font-size:3.2rem;line-height:1.05;color:var(--cash);margin:2px 0}
+  .vault .lock-note{display:inline-flex;gap:6px;align-items:center;color:var(--coin);font-weight:700;font-size:.85rem;background:#00000030;padding:6px 12px;border-radius:999px;margin-top:6px}
+
+  .history h3{font-size:1rem;margin-bottom:10px;color:var(--muted)}
+  .hist-item{display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border);font-weight:700;font-size:.92rem}
+  .hist-item:last-child{border-bottom:none}
+  .hist-item .d{color:var(--muted);font-weight:600;font-size:.82rem}
+  .hist-item .a{font-family:'Fredoka';color:var(--cash)}
+  .empty{color:var(--muted);text-align:center;padding:14px;font-weight:600;font-size:.9rem}
+
+  /* ---------- Reference grids ---------- */
+  .ref-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+  .ref-item{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--panel-2);border:1px solid var(--border);border-radius:13px;padding:11px 14px}
+  .ref-item .name{font-weight:700;font-size:.92rem}
+  .ref-item .price{font-family:'Fredoka';font-weight:600;white-space:nowrap}
+  .ref-item .price.coin{color:var(--coin)}
+  .ref-item .price.cash{color:var(--cash)}
+  .shop-head{font-family:'Fredoka';font-size:1.02rem;color:var(--muted);margin:16px 0 8px}
+  .shop-head:first-child{margin-top:0}
+
+  footer{text-align:center;color:var(--muted);font-size:.82rem;font-weight:600;margin-top:8px;line-height:1.7}
+  footer a{color:var(--blue);cursor:pointer;text-decoration:underline}
+  .reset{margin-top:14px}
+  .reset button{background:none;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:7px 14px;cursor:pointer;font-family:inherit;font-weight:700;font-size:.8rem}
+  .reset button:hover{border-color:var(--danger);color:var(--danger)}
+
+  /* coin drop animation */
+  .drop{position:fixed;font-size:1.4rem;pointer-events:none;z-index:50;animation:fall 1s ease-in forwards}
+  @keyframes fall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(160px) rotate(360deg)}}
+
+  .pulse{animation:pulse .4s ease}
+  @keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none!important;transition:none!important}
+  }
+
+  /* ---------- Auth ---------- */
+  .admin-only{display:none}
+  body.is-admin .admin-only{display:block}
+  body.is-admin .earn-grid.admin-only{display:grid}
+  body.is-admin .custom-row.admin-only{display:flex}
+  .child-note{display:none;background:#171247;border:1px dashed var(--border-bright);border-radius:14px;padding:13px 15px;color:var(--muted);font-weight:700;font-size:.9rem;text-align:center}
+  body.is-child .child-note{display:block}
+
+  .role-bar{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    background:linear-gradient(120deg,#2a2172,#221a5e);border:1px solid var(--border-bright);
+    border-radius:16px;padding:10px 14px;margin-bottom:20px;font-weight:800;
+  }
+  .role-bar .who{display:flex;align-items:center;gap:8px;font-size:.95rem}
+  .role-bar .who .badge{background:#00000030;padding:3px 10px;border-radius:999px;font-size:.8rem}
+  body.is-admin .role-bar{border-color:var(--pop);}
+  .role-bar .acts{display:flex;gap:8px}
+  .link-btn{background:none;border:1px solid var(--border-bright);color:var(--text);border-radius:10px;padding:7px 12px;cursor:pointer;font-family:inherit;font-weight:700;font-size:.82rem}
+  .link-btn:hover{background:#39308f}
+  .link-btn.key:hover{border-color:var(--coin);color:var(--coin)}
+
+  /* login overlay */
+  .login-screen{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:20px;
+    background:radial-gradient(900px 500px at 50% -10%, var(--bg-glow), transparent 60%), var(--bg)}
+  .login-card{width:100%;max-width:360px;background:linear-gradient(180deg,var(--panel),#1c1650);border:1px solid var(--border-bright);border-radius:24px;padding:28px 24px;box-shadow:var(--shadow);text-align:center}
+  .login-card .coin-badge{width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff2b0,var(--coin) 45%,var(--coin-deep));display:grid;place-items:center;font-size:1.7rem;margin:0 auto 12px;box-shadow:0 6px 0 #b9791088}
+  .login-card h2{font-size:1.5rem;margin-bottom:4px}
+  .login-card p{color:var(--muted);font-weight:600;font-size:.9rem;margin-bottom:20px}
+  .login-card label{display:block;text-align:left;color:var(--muted);font-weight:800;font-size:.75rem;text-transform:uppercase;letter-spacing:1px;margin:0 0 6px 2px}
+  .login-card input{width:100%;background:#171247;border:1px solid var(--border-bright);color:var(--text);border-radius:12px;padding:13px 15px;font-family:'Nunito';font-weight:700;font-size:1rem;margin-bottom:14px}
+  .login-card input:focus{outline:2px solid var(--blue);outline-offset:1px}
+  .login-card .cta{margin-top:4px}
+  .login-err{color:var(--danger);font-weight:800;min-height:20px;font-size:.88rem;margin-top:10px}
+  .login-hint{color:var(--muted);font-size:.78rem;font-weight:600;margin-top:14px}
+
+  .settings-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+  @media(max-width:460px){.settings-row{grid-template-columns:1fr}}
+  .settings-row input{background:#171247;border:1px solid var(--border-bright);color:var(--text);border-radius:12px;padding:11px 13px;font-family:'Nunito';font-weight:700;font-size:.95rem}
+  .settings-row input:focus{outline:2px solid var(--blue);outline-offset:1px}
+
+  /* ---------- Tutorial ---------- */
+  .tut-overlay{position:fixed;inset:0;z-index:120;display:none;place-items:center;padding:20px;background:rgba(9,7,28,.74)}
+  .tut-overlay.show{display:grid}
+  .tut-card{width:100%;max-width:400px;background:linear-gradient(180deg,var(--panel),#1c1650);border:1px solid var(--border-bright);border-radius:28px;padding:26px 24px 22px;box-shadow:var(--shadow);text-align:center;position:relative}
+  .tut-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;font-family:inherit;padding:6px;line-height:1}
+  .tut-close:hover{color:var(--text)}
+  .tut-stage{width:132px;height:132px;margin:8px auto 18px;border-radius:34px;display:grid;place-items:center;font-size:4rem;background:radial-gradient(circle at 40% 30%,#332880,#221a5e);border:1px solid var(--border-bright);box-shadow:inset 0 -7px 16px rgba(0,0,0,.32)}
+  .tut-title{font-family:'Fredoka';font-size:1.5rem;font-weight:700;margin-bottom:8px}
+  .tut-text{color:var(--muted);font-weight:700;font-size:1.02rem;line-height:1.55;min-height:70px}
+  .tut-text b{color:var(--coin)}
+  .tut-dots{display:flex;gap:7px;justify-content:center;margin:18px 0 16px}
+  .tut-dots i{width:8px;height:8px;border-radius:50%;background:var(--border-bright);transition:.25s}
+  .tut-dots i.on{background:var(--coin);width:22px;border-radius:5px}
+  .tut-nav{display:flex;gap:10px}
+  .tut-nav button{flex:1;border:none;cursor:pointer;font-family:'Fredoka';font-weight:600;font-size:1.05rem;padding:13px;border-radius:14px}
+  .tut-back{background:var(--panel-2);color:var(--text);border:1px solid var(--border-bright)}
+  .tut-back:hover{background:#39308f}
+  .tut-next{background:linear-gradient(120deg,var(--pop),var(--pop-deep));color:#fff;box-shadow:0 6px 0 #c93a6e}
+  .tut-next:active{transform:translateY(3px);box-shadow:0 3px 0 #c93a6e}
+  .tut-anim{animation:tpop .32s ease}
+  @keyframes tpop{0%{opacity:0;transform:translateY(10px) scale(.97)}100%{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="coin-badge">🪙</div>
+    <h2>JB Economy</h2>
+    <p>Sign in to see your coins &amp; bank</p>
+    <label for="loginUser">Username</label>
+    <input id="loginUser" type="text" autocomplete="username" autocapitalize="none" />
+    <label for="loginPass">Password</label>
+    <input id="loginPass" type="password" autocomplete="current-password" />
+    <button class="cta" id="loginBtn">Sign in</button>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-hint" id="loginHint"></div>
+  </div>
+</div>
+
+<!-- ============ TUTORIAL ============ -->
+<div class="tut-overlay" id="tutOverlay">
+  <div class="tut-card">
+    <button class="tut-close" id="tutClose" aria-label="Close tutorial">✕</button>
+    <div class="tut-stage" id="tutStage">👋</div>
+    <div class="tut-title" id="tutTitle"></div>
+    <div class="tut-text" id="tutText"></div>
+    <div class="tut-dots" id="tutDots"></div>
+    <div class="tut-nav">
+      <button class="tut-back" id="tutBack">Back</button>
+      <button class="tut-next" id="tutNext">Next</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <div class="floaties" aria-hidden="true">
+      <span style="left:8%;top:20%">🪙</span><span style="left:88%;top:10%;animation-delay:1s">💰</span>
+      <span style="left:20%;top:70%;animation-delay:2s">🪙</span><span style="left:75%;top:65%;animation-delay:1.5s">✨</span>
+    </div>
+    <div class="logo"><span class="coin-badge">🪙</span> JB Economy</div>
+    <p>Turn your coins into cash — and watch your savings grow!</p>
+  </header>
+
+  <div class="role-bar">
+    <div class="who"><span id="roleIcon">👦</span> <span id="roleName">Child mode</span> <span class="badge" id="roleUser"></span></div>
+    <div class="acts">
+      <button class="link-btn" id="tutBtn">❔ How it works</button>
+      <button class="link-btn key child-only" id="parentBtn" style="display:none">🔑 Parent sign-in</button>
+      <button class="link-btn" id="signOutBtn">Sign out</button>
+    </div>
+  </div>
+
+  <!-- ============ WALLET ============ -->
+  <section class="card">
+    <div class="card-title"><span class="ico">👋</span> Hello, Karim</div>
+
+    <div class="wallet-top">
+      <div>
+        <div class="label">You have</div>
+        <div class="wallet-bal"><span id="walletBal">0</span> <span class="c">coins</span></div>
+      </div>
+      <div style="font-size:2.4rem">🪙</div>
+    </div>
+
+    <div class="earn-grid admin-only" id="earnGrid"></div>
+
+    <div class="custom-row admin-only">
+      <input type="number" id="customCoins" placeholder="Type any amount…" min="1" inputmode="numeric" />
+      <button class="mini-btn" id="addCustom">+ Add</button>
+      <button class="mini-btn minus" id="subCustom">– Spend</button>
+    </div>
+
+    <div class="child-note">🔒 Only a parent can add or remove coins.</div>
+  </section>
+
+  <!-- ============ CONVERTER ============ -->
+  <section class="card">
+    <div class="card-title"><span class="ico">💱</span> Coin → Cash Converter</div>
+    <div class="card-sub">100 coins = $1.00. Type coins to see what they're worth.</div>
+
+    <div class="conv-io">
+      <div class="io-box">
+        <div class="lab">Coins</div>
+        <input class="coin-input" id="convInput" type="text" placeholder="0" inputmode="numeric" autocomplete="off" />
+      </div>
+      <div class="conv-arrow">➜</div>
+      <div class="io-box">
+        <div class="lab">Cash value</div>
+        <div class="cash-out-num" id="convCash">$0.00</div>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="split-box spend">
+        <div class="lab">💵 Spend now</div>
+        <div class="amt" id="spendNow">$0.00</div>
+        <div class="hint">Ask a parent for this in cash</div>
+      </div>
+      <div class="split-box save">
+        <div class="lab">🔒 Into the bank</div>
+        <div class="amt" id="toSave">$0.00</div>
+        <div class="hint">Locked until you turn 18</div>
+      </div>
+    </div>
+
+    <button class="cta admin-only" id="cashOutBtn">Cash out these coins</button>
+    <div class="child-note">🔒 Ask a parent to cash out your coins into real money.</div>
+    <div class="toast" id="convToast"></div>
+  </section>
+
+  <!-- ============ BANK ============ -->
+  <section class="card">
+    <div class="card-title"><span class="ico">🏦</span> My Bank</div>
+    <div class="card-sub">Every time you cash out, half is saved here for the future.</div>
+
+    <div class="vault">
+      <div class="icon">🏦</div>
+      <div class="save-lab">Total saved</div>
+      <div class="save-amt" id="bankTotal">$0.00</div>
+      <div class="lock-note">🔒 Unlocks when you turn 18</div>
+    </div>
+
+    <div class="custom-row admin-only" style="margin-bottom:18px">
+      <input type="number" id="bankAmt" placeholder="Amount in $ (e.g. 5.00)" min="0" step="0.01" inputmode="decimal" />
+      <button class="mini-btn" id="addBank">+ Add $</button>
+      <button class="mini-btn minus" id="subBank">– Remove $</button>
+    </div>
+
+    <div class="history">
+      <h3>Recent deposits</h3>
+      <div id="histList"></div>
+    </div>
+  </section>
+
+  <!-- ============ EARN MENU (reference) ============ -->
+  <section class="card">
+    <div class="card-title"><span class="ico">🧹</span> How to Earn Coins</div>
+    <div class="card-sub">Do these tasks to fill up your wallet.</div>
+    <div class="ref-grid" id="earnRef"></div>
+  </section>
+
+  <!-- ============ REWARD SHOP (reference) ============ -->
+  <section class="card">
+    <div class="card-title"><span class="ico">🛒</span> Reward Shop</div>
+    <div class="card-sub">Save up your coins for these rewards!</div>
+    <div id="shopRef"></div>
+  </section>
+
+  <!-- ============ ADMIN SETTINGS ============ -->
+  <section class="card admin-only">
+    <div class="card-title"><span class="ico">⚙️</span> Admin Settings</div>
+    <div class="card-sub">Change the sign-in details. Leave a box blank to keep it the same.</div>
+    <div class="settings-row">
+      <input id="setChildUser" type="text" placeholder="New child username" autocapitalize="none" />
+      <input id="setChildPass" type="text" placeholder="New child password" />
+    </div>
+    <div class="settings-row">
+      <input id="setAdminUser" type="text" placeholder="New admin username" autocapitalize="none" />
+      <input id="setAdminPass" type="text" placeholder="New admin password" />
+    </div>
+    <button class="mini-btn" id="saveCreds" style="width:100%;padding:12px">Save sign-in changes</button>
+    <div class="toast" id="credToast"></div>
+  </section>
+
+  <footer>
+    <div>🪙 JB Economy — made with love 💜</div>
+    <div id="syncStatus">Saved on this device only.</div>
+    <div class="reset admin-only"><button id="resetBtn">Reset everything</button></div>
+  </footer>
+
+</div>
+
+<script>
+/* =================== CONFIG =================== */
+const CONFIG = {
+  coinsPerDollar: 100,   // handbook: 100 coins = $1.00
+  savePercent: 50        // handbook: 50% of a cash-out is locked away
+};
+
+/* Default sign-in details. Passwords are stored as SHA-256 hashes, not plain text.
+   Defaults ->  child: user "Karim"  password "1234"
+                admin: user "admin"  password "admin123"
+   You can change all of these in the app under Admin Settings (no code editing needed). */
+const DEFAULT_ACCOUNTS = {
+  childUser: 'Karim',
+  childHash: '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4',
+  adminUser: 'admin',
+  adminHash: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9'
+};
+
+/* ============ CLOUD SYNC (optional) ============
+   Leave both blank = the app just saves on this one device (no change).
+   Fill both in = the wallet & bank sync across every device automatically.
+
+   Quick setup (about 3 minutes, free):
+     1. Go to jsonbin.io and sign up (free).
+     2. Click "Create Bin", give it starter content, hit Save.
+     3. Copy the BIN ID from the bins list -> paste below.
+     4. Go to jsonbin.io/api-keys -> Create Access Key with only
+        "Read Bin" + "Update Bin" enabled -> copy it -> paste below.
+     Save the file, push to GitHub, done.
+
+   Note: this ACCESS key is visible in the page source, but it's scoped so the
+   worst anyone could do is read or edit Karim's coins/bank — it can't touch the
+   rest of your JSONBin account. */
+const SYNC = {
+  binId: '6a4ed2a2da38895dfe42efb5',   // your JSONBin Bin ID
+  key:   '$2a$10$S.v7mxVI7FZrtktG2cpaUeMaL.gK4nOLDcg3ombgGMd8N.EgGmY.m'   // your JSONBin ACCESS Key (Read + Update only)
+};
+
+/* compact SHA-256 (matches standard implementations) */
+function sha256(ascii){
+  function rr(n,x){return (x>>>n)|(x<<(32-n));}
+  var maxWord=Math.pow(2,32),result='',words=[],asciiBitLength=ascii.length*8;
+  var hash=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],primeCounter=k.length,isComposite={};
+  for(var candidate=2;primeCounter<64;candidate++){
+    if(!isComposite[candidate]){
+      for(var i=0;i<313;i+=candidate){isComposite[i]=candidate;}
+      hash[primeCounter]=(Math.pow(candidate,.5)*maxWord)|0;
+      k[primeCounter++]=(Math.pow(candidate,1/3)*maxWord)|0;
+    }
+  }
+  ascii+='\x80';
+  while(ascii.length%64-56)ascii+='\x00';
+  for(var i=0;i<ascii.length;i++){var j=ascii.charCodeAt(i);if(j>>8)return;words[i>>2]|=j<<((3-i)%4)*8;}
+  words[words.length]=((asciiBitLength/maxWord)|0);words[words.length]=(asciiBitLength);
+  for(var j=0;j<words.length;){
+    var w=words.slice(j,j+=16),oldHash=hash;hash=hash.slice(0,8);
+    for(var i=0;i<64;i++){
+      var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4];
+      var temp1=hash[7]+(rr(6,e)^rr(11,e)^rr(25,e))+((e&hash[5])^((~e)&hash[6]))+k[i]+
+        (w[i]=i<16?w[i]:(w[i-16]+(rr(7,w15)^rr(18,w15)^(w15>>>3))+w[i-7]+(rr(17,w2)^rr(19,w2)^(w2>>>10)))|0);
+      var temp2=(rr(2,a)^rr(13,a)^rr(22,a))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+      hash=[(temp1+temp2)|0].concat(hash);hash[4]=(hash[4]+temp1)|0;
+    }
+    for(var i=0;i<8;i++){hash[i]=(hash[i]+oldHash[i])|0;}
+  }
+  for(var i=0;i<8;i++){for(var j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;result+=((b<16)?0:'')+b.toString(16);}}
+  return result;
+}
+
+// Earning menu (from the handbook)
+const EARN = [
+  {t:'Dishes',        v:15, note:'Daily'},
+  {t:'Make Bed',      v:10, note:'Daily'},
+  {t:'Reading',       v:30, note:'1 hour'},
+  {t:'Khan Academy',  v:25, note:'1 hour'},
+  {t:'Mom Massage',   v:25, note:'30 min'},
+  {t:'Garbage',       v:20, note:'Weekly'},
+];
+
+// Reward shop (from the handbook)
+const SHOP = [
+  {group:'⚡ Privileges & Screen Time', items:[
+    {name:'Small Candy or Snack', price:15,  kind:'coin'},
+    {name:'Stay Up 15 Min Later (weekend)', price:20, kind:'coin'},
+    {name:'Extra 30 Min Screen Time', price:30, kind:'coin'},
+    {name:'Nintendo Switch — 2 hours', price:100, kind:'coin'},
+    {name:'Nintendo DS — 3 hours', price:120, kind:'coin'},
+  ]},
+  {group:'🧱 Physical Items & Cash', items:[
+    {name:'100 ROBUX', price:125, kind:'coin'},
+    {name:'500 ROBUX', price:500, kind:'coin'},
+    {name:'$5.00 Cash Payout (50/50 split)', price:500, kind:'coin'},
+    {name:'LEGO Set — $15 max value', price:1500, kind:'coin'},
+    {name:'LEGO Set — $30 max value', price:3000, kind:'coin'},
+    {name:'LEGO Set — $60 max value', price:6000, kind:'coin'},
+  ]}
+];
+
+/* =================== STORAGE (safe for GitHub + preview) =================== */
+const KEY = 'jbEconomy_v1';
+let mem = {}; // in-memory fallback if localStorage is blocked
+function loadState(){
+  const blank = {coins:0, bankCents:0, history:[]};
+  try{
+    const raw = localStorage.getItem(KEY);
+    return raw ? {...blank, ...JSON.parse(raw)} : blank;
+  }catch(e){
+    return mem.state ? {...blank, ...mem.state} : blank;
+  }
+}
+function saveState(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch(e){ mem.state = state; }
+  pushRemote();
+}
+let state = loadState();
+
+/* ---- Cloud sync layer (no-op unless SYNC is filled in) ---- */
+const JB_API = 'https://api.jsonbin.io/v3/b';
+const syncOn = () => !!(SYNC.binId && SYNC.key);
+let syncTimer = null, syncBusy = false;
+
+function setSyncBadge(status){ // 'local' | 'ok' | 'saving' | 'error'
+  const el = document.getElementById('syncStatus'); if(!el) return;
+  const map = {
+    local: 'Saved on this device only.',
+    ok:    '☁️ Synced across your devices.',
+    saving:'☁️ Saving…',
+    error: '⚠️ Sync error — saved on this device.'
+  };
+  el.textContent = map[status] || map.local;
+}
+
+async function loadRemote(){
+  const res = await fetch(`${JB_API}/${SYNC.binId}/latest`, { headers:{ 'X-Access-Key': SYNC.key } });
+  if(!res.ok) throw new Error('load '+res.status);
+  const json = await res.json();
+  return json.record;
+}
+function pushRemote(){
+  if(!syncOn()) return;
+  clearTimeout(syncTimer);
+  setSyncBadge('saving');
+  syncTimer = setTimeout(async ()=>{
+    try{
+      syncBusy = true;
+      const res = await fetch(`${JB_API}/${SYNC.binId}`, {
+        method:'PUT',
+        headers:{ 'Content-Type':'application/json', 'X-Access-Key': SYNC.key },
+        body: JSON.stringify(state)
+      });
+      setSyncBadge(res.ok ? 'ok' : 'error');
+    }catch(e){ setSyncBadge('error'); }
+    finally{ syncBusy = false; }
+  }, 600);
+}
+async function initSync(){
+  if(!syncOn()){ setSyncBadge('local'); return; }
+  setSyncBadge('saving');
+  try{
+    const remote = await loadRemote();
+    if(remote && typeof remote === 'object'){
+      state = {coins:0, bankCents:0, history:[], ...remote};
+      try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+      if(role) render();
+    }
+    setSyncBadge('ok');
+  }catch(e){ setSyncBadge('error'); }
+}
+
+/* =================== HELPERS =================== */
+const $ = id => document.getElementById(id);
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const money = c => (c/100).toLocaleString('en-US',{style:'currency',currency:'USD'});
+const commas = n => n.toLocaleString('en-US');
+const parseCoins = s => parseInt(String(s).replace(/[^0-9]/g,'')) || 0;
+const coinsToCents = coins => Math.round(coins * 100 / CONFIG.coinsPerDollar); // 1 coin = 1 cent here
+
+function animateNum(el, to, fmt){
+  if(reduce){ el.textContent = fmt(to); return; }
+  const from = parseFloat(el.dataset.v || 0);
+  el.dataset.v = to;
+  const start = performance.now(), dur = 450;
+  function step(now){
+    const p = Math.min(1,(now-start)/dur);
+    const eased = 1-Math.pow(1-p,3);
+    el.textContent = fmt(from + (to-from)*eased);
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* =================== RENDER =================== */
+function render(){
+  animateNum($('walletBal'), state.coins, v=>commas(Math.round(v)));
+  animateNum($('bankTotal'), state.bankCents, v=>money(Math.round(v)));
+  updateConverter();
+  renderHistory();
+  $('cashOutBtn').disabled = state.coins <= 0;
+}
+
+function renderHistory(){
+  const list = $('histList');
+  if(!state.history.length){ list.innerHTML = '<div class="empty">No deposits yet — cash out some coins to start saving! 🐷</div>'; return; }
+  list.innerHTML = state.history.slice(0,8).map(h=>{
+    const label = h.coins ? `Saved from ${commas(h.coins)} coins` : (h.note || 'Adjustment');
+    const pos = h.saveCents >= 0;
+    const amt = (pos?'+':'−') + money(Math.abs(h.saveCents));
+    return `<div class="hist-item">
+      <div><div>${label}</div><div class="d">${h.date}</div></div>
+      <div class="a" style="color:${pos?'var(--cash)':'var(--danger)'}">${amt}</div>
+    </div>`;
+  }).join('');
+}
+
+/* =================== CONVERTER =================== */
+function updateConverter(){
+  const coins = parseCoins($('convInput').value);
+  const cents = coinsToCents(coins);
+  const saveCents = Math.round(cents * CONFIG.savePercent/100);
+  const spendCents = cents - saveCents;
+  $('convCash').textContent = money(cents);
+  $('spendNow').textContent = money(spendCents);
+  $('toSave').textContent = money(saveCents);
+}
+
+function cashOut(){
+  if(role!=='admin') return;
+  const coins = parseCoins($('convInput').value);
+  const toast = $('convToast');
+  if(coins <= 0){ toast.className='toast warn'; toast.textContent='Type how many coins to cash out first!'; return; }
+  if(coins > state.coins){ toast.className='toast warn'; toast.textContent=`You only have ${commas(state.coins)} coins.`; return; }
+
+  const cents = coinsToCents(coins);
+  const saveCents = Math.round(cents * CONFIG.savePercent/100);
+  const spendCents = cents - saveCents;
+
+  state.coins -= coins;
+  state.bankCents += saveCents;
+  state.history.unshift({coins, saveCents, spendCents, date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})});
+  saveState();
+
+  $('convInput').value = '';
+  toast.className='toast';
+  toast.innerHTML = `🎉 Ask a parent for <b>${money(spendCents)}</b> cash! <b>${money(saveCents)}</b> is locked in your bank.`;
+  $('bankTotal').classList.add('pulse');
+  setTimeout(()=>$('bankTotal').classList.remove('pulse'),400);
+  coinDrop();
+  render();
+}
+
+function coinDrop(){
+  if(reduce) return;
+  const vault = $('bankTotal').getBoundingClientRect();
+  for(let i=0;i<6;i++){
+    const c = document.createElement('div');
+    c.className='drop'; c.textContent = Math.random()>.5?'🪙':'💰';
+    c.style.left = (vault.left + Math.random()*vault.width) + 'px';
+    c.style.top = (vault.top - 40) + 'px';
+    c.style.animationDelay = (i*.06)+'s';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),1200);
+  }
+}
+
+/* =================== WALLET =================== */
+function changeCoins(delta){
+  if(role!=='admin') return;
+  state.coins = Math.max(0, state.coins + delta);
+  saveState();
+  render();
+}
+
+/* =================== BANK (direct admin adjust) =================== */
+function adjustBank(dollars){
+  if(role!=='admin') return;
+  const cents = Math.round(dollars * 100);
+  if(!cents) return;
+  const applied = Math.max(-state.bankCents, cents); // never go below $0
+  state.bankCents += applied;
+  state.history.unshift({
+    saveCents: applied,
+    note: applied >= 0 ? 'Added by parent' : 'Removed by parent',
+    date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+  });
+  saveState();
+  $('bankTotal').classList.add('pulse');
+  setTimeout(()=>$('bankTotal').classList.remove('pulse'),400);
+  if(applied > 0) coinDrop();
+  render();
+}
+
+/* =================== BUILD UI =================== */
+function buildEarn(){
+  $('earnGrid').innerHTML = EARN.map((e,i)=>`
+    <button class="earn-btn" data-v="${e.v}"><span class="t">${e.t}</span><span class="v">+${e.v} coins</span></button>`).join('')
+    + `<button class="earn-btn bad" data-v="-25"><span class="t">Behavior penalty</span><span class="v">−25 coins</span></button>`;
+  $('earnGrid').querySelectorAll('.earn-btn').forEach(b=>{
+    b.addEventListener('click',()=>{ changeCoins(parseInt(b.dataset.v)); b.classList.add('pulse'); setTimeout(()=>b.classList.remove('pulse'),400); });
+  });
+
+  $('earnRef').innerHTML = EARN.map(e=>`
+    <div class="ref-item"><div class="name">${e.t}<div class="d" style="color:var(--muted);font-size:.75rem;font-weight:600">${e.note}</div></div><div class="price coin">+${e.v}</div></div>`).join('');
+}
+
+function buildShop(){
+  $('shopRef').innerHTML = SHOP.map(g=>`
+    <div class="shop-head">${g.group}</div>
+    <div class="ref-grid">${g.items.map(it=>`
+      <div class="ref-item"><div class="name">${it.name}</div><div class="price coin">${commas(it.price)} 🪙</div></div>`).join('')}</div>`).join('');
+}
+
+/* =================== AUTH =================== */
+const ACCT_KEY = 'jbEconomy_accounts_v1';
+const SESSION_KEY = 'jbEconomy_session_v1';
+let role = null; // 'child' | 'admin' | null
+
+function getAccounts(){
+  try{ const raw = localStorage.getItem(ACCT_KEY); return raw ? {...DEFAULT_ACCOUNTS, ...JSON.parse(raw)} : {...DEFAULT_ACCOUNTS}; }
+  catch(e){ return mem.acct ? {...DEFAULT_ACCOUNTS, ...mem.acct} : {...DEFAULT_ACCOUNTS}; }
+}
+function setAccounts(a){
+  try{ localStorage.setItem(ACCT_KEY, JSON.stringify(a)); }catch(e){ mem.acct = a; }
+}
+function saveSession(r){ // only the low-stakes child session is remembered; admin must re-enter each visit
+  try{ if(r==='child') localStorage.setItem(SESSION_KEY,'child'); else localStorage.removeItem(SESSION_KEY); }catch(e){ mem.session = (r==='child')?'child':null; }
+}
+function readSession(){ try{ return localStorage.getItem(SESSION_KEY); }catch(e){ return mem.session || null; } }
+
+function applyRole(r){
+  role = r;
+  document.body.classList.toggle('is-admin', r==='admin');
+  document.body.classList.toggle('is-child', r==='child');
+  const a = getAccounts();
+  $('roleIcon').textContent = r==='admin' ? '🛠️' : '👦';
+  $('roleName').textContent = r==='admin' ? 'Admin mode' : 'Child mode';
+  $('roleUser').textContent = r==='admin' ? a.adminUser : a.childUser;
+  $('parentBtn').style.display = r==='child' ? 'inline-flex' : 'none';
+  $('loginScreen').style.display = 'none';
+  render();
+  if(r==='child' && !tutSeen()) setTimeout(openTut, 450);
+}
+
+function attemptLogin(){
+  const u = $('loginUser').value.trim();
+  const p = $('loginPass').value;
+  const a = getAccounts();
+  const h = p ? sha256(p) : '';
+  if(u.toLowerCase()===a.adminUser.toLowerCase() && h===a.adminHash){
+    $('loginErr').textContent=''; $('loginPass').value=''; saveSession('admin'); applyRole('admin');
+  } else if(u.toLowerCase()===a.childUser.toLowerCase() && h===a.childHash){
+    $('loginErr').textContent=''; $('loginPass').value=''; saveSession('child'); applyRole('child');
+  } else {
+    $('loginErr').textContent = 'Wrong username or password. Try again!';
+  }
+}
+
+function showLogin(prefillAdmin){
+  const a = getAccounts();
+  role = null;
+  document.body.classList.remove('is-admin','is-child');
+  $('loginScreen').style.display = 'grid';
+  $('loginUser').value = prefillAdmin ? a.adminUser : '';
+  $('loginPass').value = '';
+  $('loginErr').textContent = '';
+  (prefillAdmin ? $('loginPass') : $('loginUser')).focus();
+}
+
+$('loginBtn').addEventListener('click', attemptLogin);
+$('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') attemptLogin(); });
+$('loginUser').addEventListener('keydown', e=>{ if(e.key==='Enter') $('loginPass').focus(); });
+$('signOutBtn').addEventListener('click', ()=>{ saveSession(null); showLogin(false); });
+$('parentBtn').addEventListener('click', ()=> showLogin(true));
+
+$('saveCreds').addEventListener('click', ()=>{
+  if(role!=='admin') return;
+  const a = getAccounts();
+  const cu=$('setChildUser').value.trim(), cp=$('setChildPass').value;
+  const au=$('setAdminUser').value.trim(), ap=$('setAdminPass').value;
+  if(cu) a.childUser=cu;
+  if(cp) a.childHash=sha256(cp);
+  if(au) a.adminUser=au;
+  if(ap) a.adminHash=sha256(ap);
+  setAccounts(a);
+  ['setChildUser','setChildPass','setAdminUser','setAdminPass'].forEach(id=>$(id).value='');
+  $('credToast').textContent='✅ Saved! New sign-in details are ready.';
+  $('roleUser').textContent = a.adminUser;
+  setTimeout(()=>$('credToast').textContent='',3000);
+});
+
+/* =================== TUTORIAL =================== */
+const TUT_KEY = 'jbEconomy_tutseen_v1';
+const TUTORIAL = [
+  {emoji:'👋', title:'Hi Karim!', text:'Welcome to your very own coin bank. Let me show you how it works! 🪙'},
+  {emoji:'🧹', title:'Earn your coins', text:'Do tasks like <b>dishes</b>, <b>reading</b>, and <b>making your bed</b>. A parent adds the coins you earn into your wallet.'},
+  {emoji:'💱', title:'What are they worth?', text:'Type your coins into the <b>converter</b> to see the cash value. <b>100 coins = $1.00!</b>'},
+  {emoji:'✂️', title:'The 50/50 rule', text:'When you cash out, you get <b>half now</b> to spend — and the other <b>half is saved</b> in your bank.'},
+  {emoji:'🏦', title:'Your bank grows', text:'Your savings get bigger every time you cash out, and unlock when you turn <b>18</b>. 📈'},
+  {emoji:'🛒', title:'The reward shop', text:'Save your coins for cool rewards like <b>Robux</b>, <b>LEGO sets</b>, and <b>extra screen time</b>.'},
+  {emoji:'🎉', title:"You're all set!", text:'That\'s it! Keep earning, saving, and watching your money grow. Have fun! 💜'}
+];
+let tutStep = 0;
+
+function tutSeen(){ try{ return localStorage.getItem(TUT_KEY); }catch(e){ return mem.tut; } }
+function markTutSeen(){ try{ localStorage.setItem(TUT_KEY,'1'); }catch(e){ mem.tut='1'; } }
+
+function renderTut(){
+  const s = TUTORIAL[tutStep];
+  ['tutStage','tutTitle','tutText'].forEach(id=>{ const el=$(id); el.classList.remove('tut-anim'); void el.offsetWidth; el.classList.add('tut-anim'); });
+  $('tutStage').textContent = s.emoji;
+  $('tutTitle').textContent = s.title;
+  $('tutText').innerHTML = s.text;
+  $('tutDots').innerHTML = TUTORIAL.map((_,i)=>`<i class="${i===tutStep?'on':''}"></i>`).join('');
+  $('tutBack').style.visibility = tutStep===0 ? 'hidden' : 'visible';
+  $('tutNext').textContent = tutStep===TUTORIAL.length-1 ? "Let's go! 🎉" : 'Next';
+}
+function openTut(){ tutStep=0; renderTut(); $('tutOverlay').classList.add('show'); }
+function closeTut(){ $('tutOverlay').classList.remove('show'); markTutSeen(); }
+
+$('tutBtn').addEventListener('click', openTut);
+$('tutClose').addEventListener('click', closeTut);
+$('tutBack').addEventListener('click', ()=>{ if(tutStep>0){ tutStep--; renderTut(); } });
+$('tutNext').addEventListener('click', ()=>{ if(tutStep<TUTORIAL.length-1){ tutStep++; renderTut(); } else closeTut(); });
+$('tutOverlay').addEventListener('click', e=>{ if(e.target===$('tutOverlay')) closeTut(); });
+
+/* =================== EVENTS =================== */
+$('convInput').addEventListener('input', (e)=>{
+  const el = e.target;
+  const digitsBefore = el.value.slice(0, el.selectionStart).replace(/[^0-9]/g,'').length;
+  const n = parseCoins(el.value);
+  el.value = n ? commas(n) : '';
+  // restore caret after the same number of digits
+  let pos = 0, seen = 0;
+  while(pos < el.value.length && seen < digitsBefore){ if(/[0-9]/.test(el.value[pos])) seen++; pos++; }
+  el.setSelectionRange(pos, pos);
+  updateConverter();
+});
+$('cashOutBtn').addEventListener('click', cashOut);
+$('addCustom').addEventListener('click', ()=>{ const v=parseInt($('customCoins').value)||0; if(v>0){changeCoins(v); $('customCoins').value='';} });
+$('subCustom').addEventListener('click', ()=>{ const v=parseInt($('customCoins').value)||0; if(v>0){changeCoins(-v); $('customCoins').value='';} });
+$('addBank').addEventListener('click', ()=>{ const v=parseFloat($('bankAmt').value)||0; if(v>0){adjustBank(v); $('bankAmt').value='';} });
+$('subBank').addEventListener('click', ()=>{ const v=parseFloat($('bankAmt').value)||0; if(v>0){adjustBank(-v); $('bankAmt').value='';} });
+$('resetBtn').addEventListener('click', ()=>{
+  if(role!=='admin') return;
+  if(confirm('Reset the wallet, bank, and history to zero? This cannot be undone.')){
+    state = {coins:0, bankCents:0, history:[]}; saveState(); render();
+    $('convToast').textContent=''; $('convInput').value='';
+  }
+});
+
+/* =================== INIT =================== */
+buildEarn();
+buildShop();
+if(readSession()==='child'){ applyRole('child'); }
+else { showLogin(false); }
+initSync();
+</script>
+</body>
+</html>
