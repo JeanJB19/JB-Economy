@@ -484,7 +484,7 @@
     <div class="card-sub">Leave a box blank to keep it the same.</div>
     <div class="settings-row">
       <input id="setAdminUser" type="text" placeholder="New admin username" autocapitalize="none" />
-      <input id="setAdminPass" type="text" placeholder="New admin password" />
+      <input id="setAdminPass" type="text" placeholder="New admin password" autocapitalize="none" autocorrect="off" spellcheck="false" />
     </div>
     <button class="mini-btn" id="saveCreds" style="width:100%;padding:12px">Save admin sign-in</button>
     <div class="toast" id="credToast"></div>
@@ -530,16 +530,35 @@ const DEFAULT_ACCOUNTS = {
         "Read Bin" + "Update Bin" enabled -> copy it -> paste below.
      Save the file, push to GitHub, done.
 
+   The bin holds each kid's coins/bank AND the sign-in accounts (usernames +
+   hashed passwords), so a kid you add on one device can sign in on any device.
+
    Note: this ACCESS key is visible in the page source, but it's scoped so the
-   worst anyone could do is read or edit Karim's coins/bank — it can't touch the
-   rest of your JSONBin account. */
+   worst anyone could do is read or edit this app's bin — it can't touch the rest
+   of your JSONBin account. Passwords are stored hashed, never in plain text, but
+   don't reuse a password here that you use anywhere important. */
 const SYNC = {
   binId: '6a4ed2a2da38895dfe42efb5',   // your JSONBin Bin ID
   key:   '$2a$10$S.v7mxVI7FZrtktG2cpaUeMaL.gK4nOLDcg3ombgGMd8N.EgGmY.m'   // your JSONBin ACCESS Key (Read + Update only)
 };
 
+/* Turn any string into a UTF-8 byte string so accented/emoji passwords hash
+   instead of silently failing. Plain ASCII is unchanged, so existing hashes still match. */
+function toUtf8(str){
+  let out = '';
+  for(const ch of String(str)){
+    const cp = ch.codePointAt(0);
+    if(cp < 0x80) out += String.fromCharCode(cp);
+    else if(cp < 0x800) out += String.fromCharCode(0xC0|cp>>6, 0x80|cp&63);
+    else if(cp < 0x10000) out += String.fromCharCode(0xE0|cp>>12, 0x80|(cp>>6)&63, 0x80|cp&63);
+    else out += String.fromCharCode(0xF0|cp>>18, 0x80|(cp>>12)&63, 0x80|(cp>>6)&63, 0x80|cp&63);
+  }
+  return out;
+}
+
 /* compact SHA-256 (matches standard implementations) */
 function sha256(ascii){
+  ascii = toUtf8(ascii);
   function rr(n,x){return (x>>>n)|(x<<(32-n));}
   var maxWord=Math.pow(2,32),result='',words=[],asciiBitLength=ascii.length*8;
   var hash=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],primeCounter=k.length,isComposite={};
@@ -622,6 +641,7 @@ function migrateState(s){
     // old single-wallet shape had coins/bankCents/history at the top level
     const hadLegacy = ('coins' in s) || ('bankCents' in s) || ('history' in s);
     const migrated = {kids:{}};
+    if(s.accounts) migrated.accounts = s.accounts;
     if(hadLegacy){
       const firstId = (getAccounts().kids[0] || {}).id || 'kid1';
       migrated.kids[firstId] = {coins:s.coins||0, bankCents:s.bankCents||0, history:Array.isArray(s.history)?s.history:[]};
@@ -695,18 +715,35 @@ function pushRemote(){
     finally{ syncBusy = false; }
   }, 600);
 }
+// Sign-in is blocked until the cloud accounts arrive, otherwise a kid on a fresh
+// device would be checked against the built-in defaults and wrongly rejected.
+function setLoginBusy(busy){
+  const btn = $('loginBtn'); if(!btn) return;
+  btn.disabled = busy;
+  btn.textContent = busy ? 'Loading accounts…' : 'Sign in';
+}
+
 async function initSync(){
-  if(!syncOn()){ setSyncBadge('local'); return; }
+  if(!syncOn()){ setSyncBadge('local'); setLoginBusy(false); return; }
   setSyncBadge('saving');
+  setLoginBusy(true);
   try{
     const remote = await loadRemote();
     if(remote && typeof remote === 'object'){
-      state = migrateState(remote);
+      const merged = migrateState(remote);
+      // Cloud accounts win. If the cloud has none yet, publish ours only when this
+      // device has real saved accounts (never the built-in defaults).
+      let seeded = false;
+      if(!merged.accounts && hasLocalAccounts()){ merged.accounts = getAccounts(); seeded = true; }
+      state = merged;
+      cacheAccounts(state.accounts);
       try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
-      if(role) render();
+      if(seeded) saveState(); // publish this device's accounts so others can sign in
+      if(role){ renderKidPicker(); renderKidsAdmin(); updateKidName(); render(); }
     }
     setSyncBadge('ok');
   }catch(e){ setSyncBadge('error'); }
+  finally{ setLoginBusy(false); }
 }
 
 /* =================== HELPERS =================== */
@@ -887,12 +924,29 @@ function normalizeAccounts(a){
   if(!a.adminHash) a.adminHash = DEFAULT_ACCOUNTS.adminHash;
   return a;
 }
+// Accounts live inside the synced state so new kids reach every device, with
+// localStorage as a local cache for offline / sync-disabled use.
 function getAccounts(){
-  try{ const raw = localStorage.getItem(ACCT_KEY); return normalizeAccounts(raw ? JSON.parse(raw) : DEFAULT_ACCOUNTS); }
-  catch(e){ return normalizeAccounts(mem.acct || DEFAULT_ACCOUNTS); }
+  if(state && state.accounts) return normalizeAccounts(state.accounts);
+  try{
+    const raw = localStorage.getItem(ACCT_KEY);
+    return normalizeAccounts(raw ? JSON.parse(raw) : DEFAULT_ACCOUNTS);
+  }catch(e){ return normalizeAccounts(mem.acct || DEFAULT_ACCOUNTS); }
+}
+function cacheAccounts(a){
+  if(!a) return;
+  try{ localStorage.setItem(ACCT_KEY, JSON.stringify(a)); }catch(e){ mem.acct = a; }
+}
+// True only if a parent has actually saved accounts on THIS device. A device that
+// merely falls back to the built-in defaults must never publish them to the cloud,
+// or it would wipe out the kids added elsewhere.
+function hasLocalAccounts(){
+  try{ return !!localStorage.getItem(ACCT_KEY); }catch(e){ return !!mem.acct; }
 }
 function setAccounts(a){
-  try{ localStorage.setItem(ACCT_KEY, JSON.stringify(a)); }catch(e){ mem.acct = a; }
+  state.accounts = a;
+  cacheAccounts(a);
+  saveState(); // also pushes to the cloud so other devices can sign in
 }
 function kidById(id){ return getAccounts().kids.find(k=>k.id===id) || null; }
 
@@ -941,6 +995,7 @@ function applyRole(r, kidId){
 }
 
 function attemptLogin(){
+  if($('loginBtn').disabled) return; // accounts still loading from the cloud
   const u = $('loginUser').value.trim();
   const p = $('loginPass').value;
   const a = getAccounts();
@@ -988,7 +1043,7 @@ function kidRowHTML(k){
   return `<div class="kid-row" data-id="${escAttr(k.id)}"${k.isNew?' data-new="1"':''}>
     <input class="k-name" value="${escAttr(k.name)}" placeholder="Name (e.g. Sara)" />
     <input class="k-user" value="${escAttr(k.user)}" placeholder="Username" autocapitalize="none" />
-    <input class="k-pass" type="text" placeholder="${k.isNew?'Password':'New password (blank = keep)'}" />
+    <input class="k-pass" type="text" placeholder="${k.isNew?'Password':'New password (blank = keep)'}" autocapitalize="none" autocorrect="off" spellcheck="false" />
     <button class="mini-btn minus k-del" title="Remove this kid">🗑</button>
   </div>`;
 }
@@ -1196,6 +1251,9 @@ buildEarn();
 buildRules();
 buildShop();
 state = loadState(); // load now that accounts helpers are defined (migration may need them)
+// Only adopt accounts this device has actually saved; otherwise leave it unset so
+// getAccounts() falls back to the defaults without ever publishing them.
+if(!state.accounts && hasLocalAccounts()) state.accounts = getAccounts();
 
 const sess = readSession();
 if(sess && sess.indexOf('child:')===0){
