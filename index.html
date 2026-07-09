@@ -233,6 +233,7 @@
   .login-card .coin-badge{width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff2b0,var(--coin) 45%,var(--coin-deep));display:grid;place-items:center;font-size:1.7rem;margin:0 auto 12px;box-shadow:0 6px 0 #b9791088}
   .login-card h2{font-size:1.5rem;margin-bottom:4px}
   .login-card p{color:var(--muted);font-weight:600;font-size:.9rem;margin-bottom:20px}
+  .login-card p b{color:var(--coin);font-weight:800}
   .login-card label{display:block;text-align:left;color:var(--muted);font-weight:800;font-size:.75rem;text-transform:uppercase;letter-spacing:1px;margin:0 0 6px 2px}
   .login-card input{width:100%;background:#171247;border:1px solid var(--border-bright);color:var(--text);border-radius:12px;padding:13px 15px;font-family:'Nunito';font-weight:700;font-size:1rem;margin-bottom:14px}
   .login-card input:focus{outline:2px solid var(--blue);outline-offset:1px}
@@ -245,10 +246,38 @@
   .settings-row input{background:#171247;border:1px solid var(--border-bright);color:var(--text);border-radius:12px;padding:11px 13px;font-family:'Nunito';font-weight:700;font-size:.95rem}
   .settings-row input:focus{outline:2px solid var(--blue);outline-offset:1px}
 
+  .settings-head{font-family:'Fredoka';font-weight:600;font-size:1.08rem;margin:2px 0 4px;display:flex;align-items:center;gap:8px}
+  .kid-row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center}
+  @media(max-width:560px){.kid-row{grid-template-columns:1fr 1fr}.kid-row .k-del{grid-column:2;justify-self:end}}
+  .kid-row input{background:#171247;border:1px solid var(--border-bright);color:var(--text);border-radius:12px;padding:10px 12px;font-family:'Nunito';font-weight:700;font-size:.9rem;min-width:0}
+  .kid-row input:focus{outline:2px solid var(--blue);outline-offset:1px}
+  .kid-row .k-del{padding:0 12px;height:40px;line-height:1}
+
+  .kid-picker{display:none;background:var(--panel-2);border:1px solid var(--border-bright);color:var(--text);border-radius:10px;padding:6px 10px;font-family:inherit;font-weight:800;font-size:.82rem;cursor:pointer;max-width:150px}
+  body.is-admin select.kid-picker{display:inline-block}
+
   /* ---------- Tutorial ---------- */
-  .tut-overlay{position:fixed;inset:0;z-index:120;display:none;place-items:center;padding:20px;background:rgba(9,7,28,.74)}
-  .tut-overlay.show{display:grid}
-  .tut-card{width:100%;max-width:400px;background:linear-gradient(180deg,var(--panel),#1c1650);border:1px solid var(--border-bright);border-radius:28px;padding:26px 24px 22px;box-shadow:var(--shadow);text-align:center;position:relative}
+  .tut-dim{position:fixed;inset:0;z-index:118;display:none;background:rgba(9,7,28,.82)}
+  body.tut-open .tut-dim{display:block}
+
+  /* the highlighted section pops above the dim with a glowing ring */
+  .tut-spot{position:relative;z-index:120;border-radius:20px;
+    outline:3px solid var(--coin);outline-offset:4px;
+    box-shadow:0 0 0 4px rgba(255,206,58,.28),0 22px 60px -10px rgba(0,0,0,.7);
+    animation:tutGlow 1.7s ease-in-out infinite}
+  @keyframes tutGlow{
+    0%,100%{box-shadow:0 0 0 4px rgba(255,206,58,.28),0 22px 60px -10px rgba(0,0,0,.7)}
+    50%{box-shadow:0 0 0 12px rgba(255,206,58,.10),0 22px 60px -10px rgba(0,0,0,.7)}
+  }
+
+  .tut-card{position:fixed;left:50%;z-index:130;width:calc(100% - 32px);max-width:400px;display:none;
+    background:linear-gradient(180deg,var(--panel),#1c1650);border:1px solid var(--border-bright);border-radius:28px;
+    padding:26px 24px 22px;box-shadow:var(--shadow);text-align:center;
+    top:50%;transform:translate(-50%,-50%)}
+  body.tut-open .tut-card{display:block}
+  .tut-card.at-center{top:50%;bottom:auto;transform:translate(-50%,-50%)}
+  .tut-card.at-top{top:16px;bottom:auto;transform:translateX(-50%)}
+  .tut-card.at-bottom{bottom:16px;top:auto;transform:translateX(-50%)}
   .tut-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;font-family:inherit;padding:6px;line-height:1}
   .tut-close:hover{color:var(--text)}
   .tut-stage{width:132px;height:132px;margin:8px auto 18px;border-radius:34px;display:grid;place-items:center;font-size:4rem;background:radial-gradient(circle at 40% 30%,#332880,#221a5e);border:1px solid var(--border-bright);box-shadow:inset 0 -7px 16px rgba(0,0,0,.32)}
@@ -275,7 +304,7 @@
   <div class="login-card">
     <div class="coin-badge">🪙</div>
     <h2>JB Economy</h2>
-    <p>Sign in to see your coins &amp; bank</p>
+    <p>Earn <b>real</b> money and prizes for completing tasks</p>
     <label for="loginUser">Username</label>
     <input id="loginUser" type="text" autocomplete="username" autocapitalize="none" />
     <label for="loginPass">Password</label>
@@ -287,17 +316,16 @@
 </div>
 
 <!-- ============ TUTORIAL ============ -->
-<div class="tut-overlay" id="tutOverlay">
-  <div class="tut-card">
-    <button class="tut-close" id="tutClose" aria-label="Close tutorial">✕</button>
-    <div class="tut-stage" id="tutStage">👋</div>
-    <div class="tut-title" id="tutTitle"></div>
-    <div class="tut-text" id="tutText"></div>
-    <div class="tut-dots" id="tutDots"></div>
-    <div class="tut-nav">
-      <button class="tut-back" id="tutBack">Back</button>
-      <button class="tut-next" id="tutNext">Next</button>
-    </div>
+<div class="tut-dim" id="tutDim"></div>
+<div class="tut-card" id="tutCard">
+  <button class="tut-close" id="tutClose" aria-label="Close tutorial">✕</button>
+  <div class="tut-stage" id="tutStage">👋</div>
+  <div class="tut-title" id="tutTitle"></div>
+  <div class="tut-text" id="tutText"></div>
+  <div class="tut-dots" id="tutDots"></div>
+  <div class="tut-nav">
+    <button class="tut-back" id="tutBack">Back</button>
+    <button class="tut-next" id="tutNext">Next</button>
   </div>
 </div>
 
@@ -313,7 +341,9 @@
   </header>
 
   <div class="role-bar">
-    <div class="who"><span id="roleIcon">👦</span> <span id="roleName">Child mode</span> <span class="badge" id="roleUser"></span></div>
+    <div class="who"><span id="roleIcon">👦</span> <span id="roleName">Child mode</span> <span class="badge" id="roleUser"></span>
+      <select id="kidPicker" class="kid-picker" title="Which kid to manage" aria-label="Which kid to manage"></select>
+    </div>
     <div class="acts">
       <button class="link-btn" id="tutBtn">❔ How it works</button>
       <button class="link-btn key child-only" id="parentBtn" style="display:none">🔑 Parent sign-in</button>
@@ -322,8 +352,8 @@
   </div>
 
   <!-- ============ WALLET ============ -->
-  <section class="card">
-    <div class="card-title"><span class="ico">👋</span> Hello, Karim</div>
+  <section class="card" id="walletCard">
+    <div class="card-title"><span class="ico">👋</span> Hello, <span id="kidName">Karim</span></div>
 
     <div class="wallet-top">
       <div>
@@ -345,7 +375,7 @@
   </section>
 
   <!-- ============ CONVERTER ============ -->
-  <section class="card">
+  <section class="card" id="convCard">
     <div class="card-title"><span class="ico">💱</span> Coin → Cash Converter</div>
     <div class="card-sub">100 coins = $1.00. Type coins to see what they're worth.</div>
 
@@ -361,7 +391,7 @@
       </div>
     </div>
 
-    <div class="split">
+    <div class="split" id="convSplit">
       <div class="split-box spend">
         <div class="lab">💵 Spend now</div>
         <div class="amt" id="spendNow">$0.00</div>
@@ -380,7 +410,7 @@
   </section>
 
   <!-- ============ BANK ============ -->
-  <section class="card">
+  <section class="card" id="bankCard">
     <div class="card-title"><span class="ico">🏦</span> My Bank</div>
     <div class="card-sub">Every time you cash out, half is saved here for the future.</div>
 
@@ -411,7 +441,7 @@
   </section>
 
   <!-- ============ REWARD SHOP (reference) ============ -->
-  <section class="card">
+  <section class="card" id="shopCard">
     <div class="card-title"><span class="ico">🛒</span> Reward Shop</div>
     <div class="card-sub">Save up your coins for these rewards!</div>
     <div id="shopRef"></div>
@@ -420,16 +450,21 @@
   <!-- ============ ADMIN SETTINGS ============ -->
   <section class="card admin-only">
     <div class="card-title"><span class="ico">⚙️</span> Admin Settings</div>
-    <div class="card-sub">Change the sign-in details. Leave a box blank to keep it the same.</div>
-    <div class="settings-row">
-      <input id="setChildUser" type="text" placeholder="New child username" autocapitalize="none" />
-      <input id="setChildPass" type="text" placeholder="New child password" />
-    </div>
+
+    <div class="settings-head">👦 Kids</div>
+    <div class="card-sub">Each kid signs in with their own username &amp; password to see their coins &amp; bank. Leave a password blank to keep it unchanged.</div>
+    <div id="kidsList"></div>
+    <button class="mini-btn" id="addKidBtn" style="width:100%;padding:11px">+ Add a kid</button>
+    <button class="mini-btn" id="saveKids" style="width:100%;padding:12px;margin-top:8px">Save kid changes</button>
+    <div class="toast" id="kidToast"></div>
+
+    <div class="settings-head" style="margin-top:24px">🔑 Admin sign-in</div>
+    <div class="card-sub">Leave a box blank to keep it the same.</div>
     <div class="settings-row">
       <input id="setAdminUser" type="text" placeholder="New admin username" autocapitalize="none" />
       <input id="setAdminPass" type="text" placeholder="New admin password" />
     </div>
-    <button class="mini-btn" id="saveCreds" style="width:100%;padding:12px">Save sign-in changes</button>
+    <button class="mini-btn" id="saveCreds" style="width:100%;padding:12px">Save admin sign-in</button>
     <div class="toast" id="credToast"></div>
   </section>
 
@@ -449,14 +484,16 @@ const CONFIG = {
 };
 
 /* Default sign-in details. Passwords are stored as SHA-256 hashes, not plain text.
-   Defaults ->  child: user "Karim"  password "1234"
+   Defaults ->  kid:   user "Karim"  password "1234"
                 admin: user "admin"  password "admin123"
-   You can change all of these in the app under Admin Settings (no code editing needed). */
+   Add more kids (each with their own username + password) right in the app under
+   Admin Settings — no code editing needed. Each kid gets their own coins & bank. */
 const DEFAULT_ACCOUNTS = {
-  childUser: 'Karim',
-  childHash: '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4',
   adminUser: 'admin',
-  adminHash: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9'
+  adminHash: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9',
+  kids: [
+    { id:'karim', name:'Karim', user:'Karim', hash:'03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4' }
+  ]
 };
 
 /* ============ CLOUD SYNC (optional) ============
@@ -524,39 +561,67 @@ const EARN = [
 const SHOP = [
   {group:'⚡ Privileges & Screen Time', items:[
     {name:'Small Candy or Snack', price:15,  kind:'coin'},
-    {name:'Stay Up 15 Min Later (weekend)', price:20, kind:'coin'},
-    {name:'Extra 30 Min Screen Time', price:30, kind:'coin'},
-    {name:'Nintendo Switch — 2 hours', price:100, kind:'coin'},
-    {name:'Nintendo DS — 3 hours', price:120, kind:'coin'},
+    {name:'Stay Up 15 Minutes Later (Weekend Only)', price:20, kind:'coin'},
+    {name:'Extra 30 Minutes of Screen Time', price:30, kind:'coin'},
+    {name:'Nintendo Switch Playtime (2 Hours)', price:200, kind:'coin'},
+    {name:'Nintendo DS Playtime — 1 hr', price:3000, kind:'coin'},
+    {name:'Nintendo DS Playtime — 3 hr', price:6000, kind:'coin'},
   ]},
   {group:'🧱 Physical Items & Cash', items:[
     {name:'100 ROBUX', price:125, kind:'coin'},
     {name:'500 ROBUX', price:500, kind:'coin'},
-    {name:'$5.00 Cash Payout (50/50 split)', price:500, kind:'coin'},
-    {name:'LEGO Set — $15 max value', price:1500, kind:'coin'},
-    {name:'LEGO Set — $30 max value', price:3000, kind:'coin'},
-    {name:'LEGO Set — $60 max value', price:6000, kind:'coin'},
+    {name:'$5.00 Cash Payout', price:500, kind:'coin'},
+    {name:'New LEGO Set ($15.00 Max Value)', price:1500, kind:'coin'},
+    {name:'New LEGO Set ($30.00 Max Value)', price:3000, kind:'coin'},
+    {name:'New LEGO Set ($60.00 Max Value)', price:6000, kind:'coin'},
   ]}
 ];
 
 /* =================== STORAGE (safe for GitHub + preview) =================== */
 const KEY = 'jbEconomy_v1';
 let mem = {}; // in-memory fallback if localStorage is blocked
-function loadState(){
-  const blank = {coins:0, bankCents:0, history:[]};
-  try{
-    const raw = localStorage.getItem(KEY);
-    return raw ? {...blank, ...JSON.parse(raw)} : blank;
-  }catch(e){
-    return mem.state ? {...blank, ...mem.state} : blank;
+
+// Each kid has their own wallet/bank/history, keyed by kid id: { kids: { "<id>": {...} } }
+function blankKid(){ return {coins:0, bankCents:0, history:[]}; }
+function migrateState(s){
+  s = (s && typeof s === 'object') ? s : {};
+  if(!s.kids || typeof s.kids !== 'object'){
+    // old single-wallet shape had coins/bankCents/history at the top level
+    const hadLegacy = ('coins' in s) || ('bankCents' in s) || ('history' in s);
+    const migrated = {kids:{}};
+    if(hadLegacy){
+      const firstId = (getAccounts().kids[0] || {}).id || 'kid1';
+      migrated.kids[firstId] = {coins:s.coins||0, bankCents:s.bankCents||0, history:Array.isArray(s.history)?s.history:[]};
+    }
+    return migrated;
   }
+  return s;
+}
+function loadState(){
+  let raw;
+  try{ raw = localStorage.getItem(KEY); }
+  catch(e){ raw = mem.state ? JSON.stringify(mem.state) : null; }
+  let parsed = null;
+  if(raw){ try{ parsed = JSON.parse(raw); }catch(e){ parsed = null; } }
+  return migrateState(parsed || {kids:{}});
 }
 function saveState(){
   try{ localStorage.setItem(KEY, JSON.stringify(state)); }
   catch(e){ mem.state = state; }
   pushRemote();
 }
-let state = loadState();
+let state = {kids:{}}; // real value loaded in INIT (after accounts are ready)
+
+// The wallet/bank/history for the kid currently being viewed or managed.
+function data(){
+  if(!state.kids) state.kids = {};
+  if(!currentKid) return blankKid(); // safety before a kid is chosen
+  const d = state.kids[currentKid] || (state.kids[currentKid] = blankKid());
+  if(!('coins' in d)) d.coins = 0;
+  if(!('bankCents' in d)) d.bankCents = 0;
+  if(!Array.isArray(d.history)) d.history = [];
+  return d;
+}
 
 /* ---- Cloud sync layer (no-op unless SYNC is filled in) ---- */
 const JB_API = 'https://api.jsonbin.io/v3/b';
@@ -603,7 +668,7 @@ async function initSync(){
   try{
     const remote = await loadRemote();
     if(remote && typeof remote === 'object'){
-      state = {coins:0, bankCents:0, history:[], ...remote};
+      state = migrateState(remote);
       try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
       if(role) render();
     }
@@ -635,17 +700,19 @@ function animateNum(el, to, fmt){
 
 /* =================== RENDER =================== */
 function render(){
-  animateNum($('walletBal'), state.coins, v=>commas(Math.round(v)));
-  animateNum($('bankTotal'), state.bankCents, v=>money(Math.round(v)));
+  const d = data();
+  animateNum($('walletBal'), d.coins, v=>commas(Math.round(v)));
+  animateNum($('bankTotal'), d.bankCents, v=>money(Math.round(v)));
   updateConverter();
   renderHistory();
-  $('cashOutBtn').disabled = state.coins <= 0;
+  $('cashOutBtn').disabled = d.coins <= 0;
 }
 
 function renderHistory(){
   const list = $('histList');
-  if(!state.history.length){ list.innerHTML = '<div class="empty">No deposits yet — cash out some coins to start saving! 🐷</div>'; return; }
-  list.innerHTML = state.history.slice(0,8).map(h=>{
+  const hist = data().history;
+  if(!hist.length){ list.innerHTML = '<div class="empty">No deposits yet — cash out some coins to start saving! 🐷</div>'; return; }
+  list.innerHTML = hist.slice(0,8).map(h=>{
     const label = h.coins ? `Saved from ${commas(h.coins)} coins` : (h.note || 'Adjustment');
     const pos = h.saveCents >= 0;
     const amt = (pos?'+':'−') + money(Math.abs(h.saveCents));
@@ -669,18 +736,19 @@ function updateConverter(){
 
 function cashOut(){
   if(role!=='admin') return;
+  const d = data();
   const coins = parseCoins($('convInput').value);
   const toast = $('convToast');
   if(coins <= 0){ toast.className='toast warn'; toast.textContent='Type how many coins to cash out first!'; return; }
-  if(coins > state.coins){ toast.className='toast warn'; toast.textContent=`You only have ${commas(state.coins)} coins.`; return; }
+  if(coins > d.coins){ toast.className='toast warn'; toast.textContent=`You only have ${commas(d.coins)} coins.`; return; }
 
   const cents = coinsToCents(coins);
   const saveCents = Math.round(cents * CONFIG.savePercent/100);
   const spendCents = cents - saveCents;
 
-  state.coins -= coins;
-  state.bankCents += saveCents;
-  state.history.unshift({coins, saveCents, spendCents, date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})});
+  d.coins -= coins;
+  d.bankCents += saveCents;
+  d.history.unshift({coins, saveCents, spendCents, date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})});
   saveState();
 
   $('convInput').value = '';
@@ -709,7 +777,8 @@ function coinDrop(){
 /* =================== WALLET =================== */
 function changeCoins(delta){
   if(role!=='admin') return;
-  state.coins = Math.max(0, state.coins + delta);
+  const d = data();
+  d.coins = Math.max(0, d.coins + delta);
   saveState();
   render();
 }
@@ -717,11 +786,12 @@ function changeCoins(delta){
 /* =================== BANK (direct admin adjust) =================== */
 function adjustBank(dollars){
   if(role!=='admin') return;
+  const d = data();
   const cents = Math.round(dollars * 100);
   if(!cents) return;
-  const applied = Math.max(-state.bankCents, cents); // never go below $0
-  state.bankCents += applied;
-  state.history.unshift({
+  const applied = Math.max(-d.bankCents, cents); // never go below $0
+  d.bankCents += applied;
+  d.history.unshift({
     saveCents: applied,
     note: applied >= 0 ? 'Added by parent' : 'Removed by parent',
     date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
@@ -756,32 +826,77 @@ function buildShop(){
 /* =================== AUTH =================== */
 const ACCT_KEY = 'jbEconomy_accounts_v1';
 const SESSION_KEY = 'jbEconomy_session_v1';
-let role = null; // 'child' | 'admin' | null
+let role = null;         // 'child' | 'admin' | null
+let currentKid = null;   // id of the kid being viewed (child) or managed (admin)
 
+const newId = () => 'k' + Math.random().toString(36).slice(2, 9);
+const escAttr = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+
+// Accept old (childUser/childHash) or new (kids[]) saved formats and always return the new shape.
+function normalizeAccounts(a){
+  a = {...a};
+  if(!Array.isArray(a.kids)){
+    a.kids = [];
+    if(a.childUser){ a.kids.push({ id:'karim', name:a.childUser, user:a.childUser, hash:a.childHash }); }
+  }
+  a.kids = a.kids.filter(k=>k && k.user).map(k=>({ id:k.id||newId(), name:k.name||k.user, user:k.user, hash:k.hash }));
+  if(!a.kids.length) a.kids = DEFAULT_ACCOUNTS.kids.map(k=>({...k}));
+  delete a.childUser; delete a.childHash;
+  if(!a.adminUser) a.adminUser = DEFAULT_ACCOUNTS.adminUser;
+  if(!a.adminHash) a.adminHash = DEFAULT_ACCOUNTS.adminHash;
+  return a;
+}
 function getAccounts(){
-  try{ const raw = localStorage.getItem(ACCT_KEY); return raw ? {...DEFAULT_ACCOUNTS, ...JSON.parse(raw)} : {...DEFAULT_ACCOUNTS}; }
-  catch(e){ return mem.acct ? {...DEFAULT_ACCOUNTS, ...mem.acct} : {...DEFAULT_ACCOUNTS}; }
+  try{ const raw = localStorage.getItem(ACCT_KEY); return normalizeAccounts(raw ? JSON.parse(raw) : DEFAULT_ACCOUNTS); }
+  catch(e){ return normalizeAccounts(mem.acct || DEFAULT_ACCOUNTS); }
 }
 function setAccounts(a){
   try{ localStorage.setItem(ACCT_KEY, JSON.stringify(a)); }catch(e){ mem.acct = a; }
 }
-function saveSession(r){ // only the low-stakes child session is remembered; admin must re-enter each visit
-  try{ if(r==='child') localStorage.setItem(SESSION_KEY,'child'); else localStorage.removeItem(SESSION_KEY); }catch(e){ mem.session = (r==='child')?'child':null; }
+function kidById(id){ return getAccounts().kids.find(k=>k.id===id) || null; }
+
+// Only the low-stakes child session is remembered (with which kid); admin must re-enter each visit.
+function saveSession(r, kidId){
+  const val = (r==='child' && kidId) ? ('child:'+kidId) : null;
+  try{ if(val) localStorage.setItem(SESSION_KEY, val); else localStorage.removeItem(SESSION_KEY); }
+  catch(e){ mem.session = val; }
 }
 function readSession(){ try{ return localStorage.getItem(SESSION_KEY); }catch(e){ return mem.session || null; } }
 
-function applyRole(r){
+function updateKidName(){
+  const kid = kidById(currentKid);
+  $('kidName').textContent = kid ? kid.name : 'there';
+}
+
+// Admin-only dropdown to choose which kid's coins/bank to manage.
+function renderKidPicker(){
+  const a = getAccounts();
+  const sel = $('kidPicker');
+  sel.innerHTML = a.kids.map(k=>`<option value="${escAttr(k.id)}">${escAttr(k.name)}</option>`).join('');
+  if(currentKid) sel.value = currentKid;
+}
+
+function applyRole(r, kidId){
   role = r;
+  const a = getAccounts();
+  if(r==='child'){
+    currentKid = kidId;
+  } else if(r==='admin'){
+    if(!currentKid || !a.kids.some(k=>k.id===currentKid)) currentKid = (a.kids[0]||{}).id || null;
+  }
   document.body.classList.toggle('is-admin', r==='admin');
   document.body.classList.toggle('is-child', r==='child');
-  const a = getAccounts();
   $('roleIcon').textContent = r==='admin' ? '🛠️' : '👦';
   $('roleName').textContent = r==='admin' ? 'Admin mode' : 'Child mode';
-  $('roleUser').textContent = r==='admin' ? a.adminUser : a.childUser;
+  const kid = kidById(currentKid);
+  $('roleUser').textContent = r==='admin' ? a.adminUser : (kid ? kid.user : '');
   $('parentBtn').style.display = r==='child' ? 'inline-flex' : 'none';
   $('loginScreen').style.display = 'none';
+  renderKidPicker();
+  renderKidsAdmin();
+  updateKidName();
   render();
-  if(r==='child' && !tutSeen()) setTimeout(openTut, 450);
+  if(r==='child' && currentKid && !tutSeen(currentKid)) setTimeout(openTut, 450);
 }
 
 function attemptLogin(){
@@ -791,11 +906,14 @@ function attemptLogin(){
   const h = p ? sha256(p) : '';
   if(u.toLowerCase()===a.adminUser.toLowerCase() && h===a.adminHash){
     $('loginErr').textContent=''; $('loginPass').value=''; saveSession('admin'); applyRole('admin');
-  } else if(u.toLowerCase()===a.childUser.toLowerCase() && h===a.childHash){
-    $('loginErr').textContent=''; $('loginPass').value=''; saveSession('child'); applyRole('child');
-  } else {
-    $('loginErr').textContent = 'Wrong username or password. Try again!';
+    return;
   }
+  const kid = a.kids.find(k=> k.user.toLowerCase()===u.toLowerCase() && h===k.hash);
+  if(kid){
+    $('loginErr').textContent=''; $('loginPass').value=''; saveSession('child', kid.id); applyRole('child', kid.id);
+    return;
+  }
+  $('loginErr').textContent = 'Wrong username or password. Try again!';
 }
 
 function showLogin(prefillAdmin){
@@ -815,18 +933,92 @@ $('loginUser').addEventListener('keydown', e=>{ if(e.key==='Enter') $('loginPass
 $('signOutBtn').addEventListener('click', ()=>{ saveSession(null); showLogin(false); });
 $('parentBtn').addEventListener('click', ()=> showLogin(true));
 
+// Admin switches which kid they're managing
+$('kidPicker').addEventListener('change', e=>{
+  if(role!=='admin') return;
+  currentKid = e.target.value;
+  updateKidName();
+  $('convInput').value=''; $('convToast').textContent='';
+  render();
+});
+
+/* ---- Kids manager (Admin Settings) ---- */
+function kidRowHTML(k){
+  return `<div class="kid-row" data-id="${escAttr(k.id)}"${k.isNew?' data-new="1"':''}>
+    <input class="k-name" value="${escAttr(k.name)}" placeholder="Name (e.g. Sara)" />
+    <input class="k-user" value="${escAttr(k.user)}" placeholder="Username" autocapitalize="none" />
+    <input class="k-pass" type="text" placeholder="${k.isNew?'Password':'New password (blank = keep)'}" />
+    <button class="mini-btn minus k-del" title="Remove this kid">🗑</button>
+  </div>`;
+}
+function renderKidsAdmin(){
+  const box = $('kidsList'); if(!box) return;
+  box.innerHTML = getAccounts().kids.map(kidRowHTML).join('');
+  box.querySelectorAll('.k-del').forEach(btn=>{
+    btn.addEventListener('click', ()=> btn.closest('.kid-row').remove());
+  });
+}
+
+$('addKidBtn').addEventListener('click', ()=>{
+  const row = document.createElement('div');
+  row.innerHTML = kidRowHTML({ id:newId(), name:'', user:'', hash:'', isNew:true });
+  const el = row.firstElementChild;
+  el.querySelector('.k-del').addEventListener('click', ()=> el.remove());
+  $('kidsList').appendChild(el);
+  el.querySelector('.k-name').focus();
+});
+
+function kidToast(msg, warn){
+  const t = $('kidToast'); t.className = 'toast' + (warn?' warn':''); t.textContent = msg;
+  setTimeout(()=>{ t.textContent=''; t.className='toast'; }, 3200);
+}
+
+$('saveKids').addEventListener('click', ()=>{
+  if(role!=='admin') return;
+  const a = getAccounts();
+  const oldById = {}; a.kids.forEach(k=> oldById[k.id]=k);
+  const rows = [...$('kidsList').querySelectorAll('.kid-row')];
+  if(!rows.length){ kidToast('You need at least one kid.', true); return; }
+
+  const kids = [], seenUsers = new Set();
+  for(const row of rows){
+    const id   = row.dataset.id;
+    const name = row.querySelector('.k-name').value.trim();
+    const user = row.querySelector('.k-user').value.trim();
+    const pass = row.querySelector('.k-pass').value;
+    const prev = oldById[id];
+    if(!name || !user){ kidToast('Every kid needs a name and a username.', true); return; }
+    if(user.toLowerCase()===a.adminUser.toLowerCase()){ kidToast(`"${user}" is the admin username — pick another.`, true); return; }
+    if(seenUsers.has(user.toLowerCase())){ kidToast(`Two kids can't share the username "${user}".`, true); return; }
+    seenUsers.add(user.toLowerCase());
+    let hash = prev ? prev.hash : '';
+    if(pass) hash = sha256(pass);
+    if(!hash){ kidToast(`Set a password for "${name}".`, true); return; }
+    kids.push({ id, name, user, hash });
+  }
+
+  a.kids = kids;
+  setAccounts(a);
+
+  // drop wallet data for removed kids
+  const liveIds = new Set(kids.map(k=>k.id));
+  Object.keys(state.kids).forEach(id=>{ if(!liveIds.has(id)) delete state.kids[id]; });
+  saveState();
+
+  if(!kids.some(k=>k.id===currentKid)) currentKid = kids[0].id;
+  renderKidPicker(); renderKidsAdmin(); updateKidName(); render();
+  kidToast('✅ Saved! Kid sign-ins are ready.');
+});
+
 $('saveCreds').addEventListener('click', ()=>{
   if(role!=='admin') return;
   const a = getAccounts();
-  const cu=$('setChildUser').value.trim(), cp=$('setChildPass').value;
   const au=$('setAdminUser').value.trim(), ap=$('setAdminPass').value;
-  if(cu) a.childUser=cu;
-  if(cp) a.childHash=sha256(cp);
   if(au) a.adminUser=au;
   if(ap) a.adminHash=sha256(ap);
   setAccounts(a);
-  ['setChildUser','setChildPass','setAdminUser','setAdminPass'].forEach(id=>$(id).value='');
-  $('credToast').textContent='✅ Saved! New sign-in details are ready.';
+  ['setAdminUser','setAdminPass'].forEach(id=>$(id).value='');
+  $('credToast').textContent='✅ Saved! New admin sign-in is ready.';
   $('roleUser').textContent = a.adminUser;
   setTimeout(()=>$('credToast').textContent='',3000);
 });
@@ -834,37 +1026,91 @@ $('saveCreds').addEventListener('click', ()=>{
 /* =================== TUTORIAL =================== */
 const TUT_KEY = 'jbEconomy_tutseen_v1';
 const TUTORIAL = [
-  {emoji:'👋', title:'Hi Karim!', text:'Welcome to your very own coin bank. Let me show you how it works! 🪙'},
-  {emoji:'🧹', title:'Earn your coins', text:'Do tasks like <b>dishes</b>, <b>reading</b>, and <b>making your bed</b>. A parent adds the coins you earn into your wallet.'},
-  {emoji:'💱', title:'What are they worth?', text:'Type your coins into the <b>converter</b> to see the cash value. <b>100 coins = $1.00!</b>'},
-  {emoji:'✂️', title:'The 50/50 rule', text:'When you cash out, you get <b>half now</b> to spend — and the other <b>half is saved</b> in your bank.'},
-  {emoji:'🏦', title:'Your bank grows', text:'Your savings get bigger every time you cash out, and unlock when you turn <b>18</b>. 📈'},
-  {emoji:'🛒', title:'The reward shop', text:'Save your coins for cool rewards like <b>Robux</b>, <b>LEGO sets</b>, and <b>extra screen time</b>.'},
-  {emoji:'🎉', title:"You're all set!", text:'That\'s it! Keep earning, saving, and watching your money grow. Have fun! 💜'}
+  {emoji:'👋', title:'Hi there!', text:'Welcome to your very own coin bank. Let me show you how it works! 🪙', target:null},
+  {emoji:'🧹', title:'Earn your coins', text:'Do tasks like <b>dishes</b>, <b>reading</b>, and <b>making your bed</b>. A parent adds the coins you earn into your wallet.', target:'walletCard'},
+  {emoji:'💱', title:'What are they worth?', text:'Type your coins into the <b>converter</b> to see the cash value. <b>100 coins = $1.00!</b>', target:'convCard'},
+  {emoji:'✂️', title:'The 50/50 rule', text:'When you cash out, you get <b>half now</b> to spend — and the other <b>half is saved</b> in your bank.', target:'convSplit'},
+  {emoji:'🏦', title:'Your bank grows', text:'Your savings get bigger every time you cash out, and unlock when you turn <b>18</b>. 📈', target:'bankCard'},
+  {emoji:'🛒', title:'The reward shop', text:'Save your coins for cool rewards like <b>Robux</b>, <b>LEGO sets</b>, and <b>extra screen time</b>.', target:'shopCard'},
+  {emoji:'🎉', title:"You're all set!", text:'That\'s it! Keep earning, saving, and watching your money grow. Have fun! 💜', target:null}
 ];
 let tutStep = 0;
 
-function tutSeen(){ try{ return localStorage.getItem(TUT_KEY); }catch(e){ return mem.tut; } }
-function markTutSeen(){ try{ localStorage.setItem(TUT_KEY,'1'); }catch(e){ mem.tut='1'; } }
+// Track which kids have already seen the tutorial (auto-plays only the first time each kid views their account).
+function seenList(){
+  let v;
+  try{ v = JSON.parse(localStorage.getItem(TUT_KEY) || '[]'); }
+  catch(e){ v = mem.tut; }
+  return Array.isArray(v) ? v : [];
+}
+function tutSeen(id){ return seenList().includes(id); }
+function markTutSeen(){
+  if(role!=='child' || !currentKid) return; // only a kid's own first view counts
+  const l = seenList();
+  if(!l.includes(currentKid)) l.push(currentKid);
+  try{ localStorage.setItem(TUT_KEY, JSON.stringify(l)); }catch(e){ mem.tut = l; }
+}
+
+function clearSpot(){ document.querySelectorAll('.tut-spot').forEach(el=>el.classList.remove('tut-spot')); }
+
+// Place the card and scroll the highlighted section into the space the card ISN'T using,
+// so the card never sits on top of what it's pointing at.
+function positionTour(el){
+  const card = $('tutCard');
+  card.classList.remove('at-center','at-top','at-bottom');
+  const vh = window.innerHeight, m = 16;
+  const cardH = card.offsetHeight || 380;
+  const maxScroll = Math.max(0, document.documentElement.scrollHeight - vh);
+  const rect = el.getBoundingClientRect();
+  const elTopDoc = window.scrollY + rect.top;   // element's position in the document (scroll-independent)
+  const elH = rect.height;
+  const smooth = reduce ? 'auto' : 'smooth';
+
+  // Plan A: card at the bottom, section sits in the free area above it.
+  const region = Math.max(120, vh - cardH - 2*m);
+  const desiredTop = elH <= region ? m + (region - elH)/2 : m; // center small sections, top-align tall ones
+  const scrollA = elTopDoc - desiredTop;
+  if(scrollA <= maxScroll + 1){
+    card.classList.add('at-bottom');
+    window.scrollTo({top: Math.max(0, scrollA), behavior: smooth});
+    return;
+  }
+
+  // Plan B: section is near the page bottom and can't be pushed up — put the card on top instead.
+  card.classList.add('at-top');
+  const scrollB = Math.min(maxScroll, Math.max(0, (elTopDoc + elH) - (vh - m)));
+  window.scrollTo({top: scrollB, behavior: smooth});
+}
+
+// Highlight the section this step is talking about.
+function spotlight(step){
+  clearSpot();
+  const el = step.target ? $(step.target) : null;
+  if(!el){ $('tutCard').classList.remove('at-top','at-bottom'); $('tutCard').classList.add('at-center'); return; }
+  el.classList.add('tut-spot');
+  requestAnimationFrame(()=>positionTour(el)); // measure after the card's content/height is laid out
+}
 
 function renderTut(){
   const s = TUTORIAL[tutStep];
   ['tutStage','tutTitle','tutText'].forEach(id=>{ const el=$(id); el.classList.remove('tut-anim'); void el.offsetWidth; el.classList.add('tut-anim'); });
   $('tutStage').textContent = s.emoji;
-  $('tutTitle').textContent = s.title;
+  const kid = kidById(currentKid);
+  $('tutTitle').textContent = (tutStep===0 && kid) ? `Hi ${kid.name}!` : s.title;
   $('tutText').innerHTML = s.text;
   $('tutDots').innerHTML = TUTORIAL.map((_,i)=>`<i class="${i===tutStep?'on':''}"></i>`).join('');
   $('tutBack').style.visibility = tutStep===0 ? 'hidden' : 'visible';
   $('tutNext').textContent = tutStep===TUTORIAL.length-1 ? "Let's go! 🎉" : 'Next';
+  spotlight(s);
 }
-function openTut(){ tutStep=0; renderTut(); $('tutOverlay').classList.add('show'); }
-function closeTut(){ $('tutOverlay').classList.remove('show'); markTutSeen(); }
+function openTut(){ tutStep=0; document.body.classList.add('tut-open'); renderTut(); }
+function closeTut(){ document.body.classList.remove('tut-open'); clearSpot(); markTutSeen(); }
 
 $('tutBtn').addEventListener('click', openTut);
 $('tutClose').addEventListener('click', closeTut);
 $('tutBack').addEventListener('click', ()=>{ if(tutStep>0){ tutStep--; renderTut(); } });
 $('tutNext').addEventListener('click', ()=>{ if(tutStep<TUTORIAL.length-1){ tutStep++; renderTut(); } else closeTut(); });
-$('tutOverlay').addEventListener('click', e=>{ if(e.target===$('tutOverlay')) closeTut(); });
+$('tutDim').addEventListener('click', closeTut);
 
 /* =================== EVENTS =================== */
 $('convInput').addEventListener('input', (e)=>{
@@ -885,8 +1131,11 @@ $('addBank').addEventListener('click', ()=>{ const v=parseFloat($('bankAmt').val
 $('subBank').addEventListener('click', ()=>{ const v=parseFloat($('bankAmt').value)||0; if(v>0){adjustBank(-v); $('bankAmt').value='';} });
 $('resetBtn').addEventListener('click', ()=>{
   if(role!=='admin') return;
-  if(confirm('Reset the wallet, bank, and history to zero? This cannot be undone.')){
-    state = {coins:0, bankCents:0, history:[]}; saveState(); render();
+  const kid = kidById(currentKid);
+  const who = kid ? kid.name : 'this kid';
+  if(confirm(`Reset ${who}'s wallet, bank, and history to zero? This cannot be undone.`)){
+    if(currentKid) state.kids[currentKid] = blankKid();
+    saveState(); render();
     $('convToast').textContent=''; $('convInput').value='';
   }
 });
@@ -894,8 +1143,16 @@ $('resetBtn').addEventListener('click', ()=>{
 /* =================== INIT =================== */
 buildEarn();
 buildShop();
-if(readSession()==='child'){ applyRole('child'); }
-else { showLogin(false); }
+state = loadState(); // load now that accounts helpers are defined (migration may need them)
+
+const sess = readSession();
+if(sess && sess.indexOf('child:')===0){
+  const kidId = sess.slice('child:'.length);
+  if(kidById(kidId)){ applyRole('child', kidId); }
+  else { saveSession(null); showLogin(false); }   // that kid was removed
+} else {
+  showLogin(false);
+}
 initSync();
 </script>
 </body>
