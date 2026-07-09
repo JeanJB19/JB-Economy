@@ -185,6 +185,9 @@
   .ref-item .price{font-family:'Fredoka';font-weight:600;white-space:nowrap}
   .ref-item .price.coin{color:var(--coin)}
   .ref-item .price.cash{color:var(--cash)}
+  .ref-item .price.bad{color:var(--danger)}
+  .ref-item .why{color:var(--muted);font-size:.75rem;font-weight:600;margin-top:2px;line-height:1.35}
+  .rule-item{border-color:#5c2a3a;background:linear-gradient(160deg,#33203f,#2b1c47)}
   .shop-head{font-family:'Fredoka';font-size:1.02rem;color:var(--muted);margin:16px 0 8px}
   .shop-head:first-child{margin-top:0}
 
@@ -256,12 +259,20 @@
   .kid-picker{display:none;background:var(--panel-2);border:1px solid var(--border-bright);color:var(--text);border-radius:10px;padding:6px 10px;font-family:inherit;font-weight:800;font-size:.82rem;cursor:pointer;max-width:150px}
   body.is-admin select.kid-picker{display:inline-block}
 
+  /* ---------- Modal (House Rules) ---------- */
+  .modal{position:fixed;inset:0;z-index:150;display:none;place-items:center;padding:20px;background:rgba(9,7,28,.84)}
+  .modal.show{display:grid}
+  .modal-card{position:relative;width:100%;max-width:460px;max-height:82vh;overflow-y:auto;
+    background:linear-gradient(180deg,var(--panel),#1c1650);border:1px solid var(--border-bright);
+    border-radius:24px;padding:24px;box-shadow:var(--shadow);animation:tpop .28s ease}
+  .modal-card .card-title{padding-right:28px}
+
   /* ---------- Tutorial ---------- */
   .tut-dim{position:fixed;inset:0;z-index:118;display:none;background:rgba(9,7,28,.82)}
   body.tut-open .tut-dim{display:block}
 
   /* the highlighted section pops above the dim with a glowing ring */
-  .tut-spot{position:relative;z-index:120;border-radius:20px;
+  .tut-spot{position:relative;z-index:120;
     outline:3px solid var(--coin);outline-offset:4px;
     box-shadow:0 0 0 4px rgba(255,206,58,.28),0 22px 60px -10px rgba(0,0,0,.7);
     animation:tutGlow 1.7s ease-in-out infinite}
@@ -329,6 +340,16 @@
   </div>
 </div>
 
+<!-- ============ HOUSE RULES (modal) ============ -->
+<div class="modal" id="rulesModal" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+  <div class="modal-card">
+    <button class="tut-close" id="rulesClose" aria-label="Close rules">✕</button>
+    <div class="card-title" id="rulesTitle"><span class="ico">📜</span> House Rules</div>
+    <div class="card-sub">What's not allowed — and what it costs you in coins.</div>
+    <div class="ref-grid" id="rulesRef"></div>
+  </div>
+</div>
+
 <div class="wrap">
 
   <header>
@@ -346,6 +367,7 @@
     </div>
     <div class="acts">
       <button class="link-btn" id="tutBtn">❔ How it works</button>
+      <button class="link-btn" id="rulesBtn">📜 Rules</button>
       <button class="link-btn key child-only" id="parentBtn" style="display:none">🔑 Parent sign-in</button>
       <button class="link-btn" id="signOutBtn">Sign out</button>
     </div>
@@ -555,6 +577,7 @@ const EARN = [
   {t:'Khan Academy',  v:25, note:'1 hour'},
   {t:'Mom Massage',   v:25, note:'30 min'},
   {t:'Garbage',       v:20, note:'Weekly'},
+  {t:'Trash Bag',     v:10, note:'Per bag'},
 ];
 
 // Reward shop (from the handbook)
@@ -575,6 +598,12 @@ const SHOP = [
     {name:'New LEGO Set ($30.00 Max Value)', price:3000, kind:'coin'},
     {name:'New LEGO Set ($60.00 Max Value)', price:6000, kind:'coin'},
   ]}
+];
+
+/* House rules — what's not allowed, and the coin penalty.
+   Add more rules here: {t:'Rule name', d:'What it means', v:-25} */
+const RULES = [
+  {t:'Bad Behavior', d:'A disrespectful attitude, lying, or fighting', v:-25},
 ];
 
 /* =================== STORAGE (safe for GitHub + preview) =================== */
@@ -816,6 +845,14 @@ function buildEarn(){
     <div class="ref-item"><div class="name">${e.t}<div class="d" style="color:var(--muted);font-size:.75rem;font-weight:600">${e.note}</div></div><div class="price coin">+${e.v}</div></div>`).join('');
 }
 
+function buildRules(){
+  $('rulesRef').innerHTML = RULES.map(r=>`
+    <div class="ref-item rule-item">
+      <div class="name">${r.t}<div class="why">${r.d}</div></div>
+      <div class="price bad">${r.v} 🪙</div>
+    </div>`).join('');
+}
+
 function buildShop(){
   $('shopRef').innerHTML = SHOP.map(g=>`
     <div class="shop-head">${g.group}</div>
@@ -1028,6 +1065,7 @@ const TUT_KEY = 'jbEconomy_tutseen_v1';
 const TUTORIAL = [
   {emoji:'👋', title:'Hi there!', text:'Welcome to your very own coin bank. Let me show you how it works! 🪙', target:null},
   {emoji:'🧹', title:'Earn your coins', text:'Do tasks like <b>dishes</b>, <b>reading</b>, and <b>making your bed</b>. A parent adds the coins you earn into your wallet.', target:'walletCard'},
+  {emoji:'📜', title:'Follow the rules', text:'Bad behavior — a disrespectful attitude, lying, or fighting — costs you <b>25 coins</b>. Tap <b>📜 Rules</b> any time to see them all.', target:'rulesBtn'},
   {emoji:'💱', title:'What are they worth?', text:'Type your coins into the <b>converter</b> to see the cash value. <b>100 coins = $1.00!</b>', target:'convCard'},
   {emoji:'✂️', title:'The 50/50 rule', text:'When you cash out, you get <b>half now</b> to spend — and the other <b>half is saved</b> in your bank.', target:'convSplit'},
   {emoji:'🏦', title:'Your bank grows', text:'Your savings get bigger every time you cash out, and unlock when you turn <b>18</b>. 📈', target:'bankCard'},
@@ -1106,6 +1144,15 @@ function renderTut(){
 function openTut(){ tutStep=0; document.body.classList.add('tut-open'); renderTut(); }
 function closeTut(){ document.body.classList.remove('tut-open'); clearSpot(); markTutSeen(); }
 
+/* =================== HOUSE RULES MODAL =================== */
+function openRules(){ $('rulesModal').classList.add('show'); }
+function closeRules(){ $('rulesModal').classList.remove('show'); }
+
+$('rulesBtn').addEventListener('click', openRules);
+$('rulesClose').addEventListener('click', closeRules);
+$('rulesModal').addEventListener('click', e=>{ if(e.target===$('rulesModal')) closeRules(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeRules(); });
+
 $('tutBtn').addEventListener('click', openTut);
 $('tutClose').addEventListener('click', closeTut);
 $('tutBack').addEventListener('click', ()=>{ if(tutStep>0){ tutStep--; renderTut(); } });
@@ -1142,6 +1189,7 @@ $('resetBtn').addEventListener('click', ()=>{
 
 /* =================== INIT =================== */
 buildEarn();
+buildRules();
 buildShop();
 state = loadState(); // load now that accounts helpers are defined (migration may need them)
 
